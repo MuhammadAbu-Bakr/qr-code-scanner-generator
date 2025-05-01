@@ -1,6 +1,6 @@
 {
-    "name": "qr_genetator",
-    "short_name": "qr_genetator",
+    "name": "qr_codescanner_generator",
+    "short_name": "qr_codescanner_generator",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

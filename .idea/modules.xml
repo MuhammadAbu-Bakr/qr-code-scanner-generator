@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/qr_genetator.iml" filepath="$PROJECT_DIR$/qr_genetator.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android/qr_genetator_android.iml" filepath="$PROJECT_DIR$/android/qr_genetator_android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/qr_codescanner_generator.iml" filepath="$PROJECT_DIR$/qr_codescanner_generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android/qr_codescanner_generator_android.iml" filepath="$PROJECT_DIR$/android/qr_codescanner_generator_android.iml" />
     </modules>
   </component>
 </project>

@@ -53,9 +53,9 @@ It demonstrates working with the device camera, dynamic QR generation, local sto
 
 ## 🎯 Bonus Features (Optional / Future Plans)
 
-- 📷 Scan QR codes from saved images (gallery support) ✅
+- 📷 Scan QR codes from saved images (gallery support)
 - 🌙 Dark mode for better usability
-- 🗂️ Categorize QR codes (e.g., WiFi, URL, text, contact, location) ✅
+- 🗂️ Categorize QR codes (e.g., WiFi, URL, text, contact, location)
 - 🚀 Auto-detect QR code type and suggest actions (e.g., open browser for URLs, add contacts for vCards)
 
 ---

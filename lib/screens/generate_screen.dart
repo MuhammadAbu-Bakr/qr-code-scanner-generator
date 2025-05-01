@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
-import 'package:flutter/services.dart';
-import 'package:share_plus/share_plus.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:flutter/rendering.dart';  
-import 'dart:ui' as ui;
-import 'dart:io';
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import '../models/qr_history.dart';
 
 class GenerateScreen extends StatefulWidget {
@@ -18,146 +11,108 @@ class GenerateScreen extends StatefulWidget {
 }
 
 class _GenerateScreenState extends State<GenerateScreen> {
-  final TextEditingController _textController = TextEditingController();
-  String _qrData = 'Enter text to generate QR code';
-  String _qrType = 'text';
-  final GlobalKey globalKey = GlobalKey();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(
-              controller: _textController,
-              decoration: const InputDecoration(
-                labelText: 'Enter text or URL',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _qrData = value.isNotEmpty ? value : 'Enter text to generate QR code';
-                  if (Uri.tryParse(value)?.hasAbsolutePath ?? false) {
-                    _qrType = 'url';
-                  } else {
-                    _qrType = 'text';
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 20),
-            Container(
-              key: globalKey,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: QrImageView(
-                data: _qrData,
-                version: QrVersions.auto,
-                size: 200,
-                gapless: false,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                ElevatedButton(
-                  onPressed: _saveToHistory,
-                  child: const Text('Save to History'),
-                ),
-                ElevatedButton(
-                  onPressed: _saveQRCode,
-                  child: const Text('Save to Gallery'),
-                ),
-                ElevatedButton(
-                  onPressed: _shareQRCode,
-                  child: const Text('Share'),
-                ),
-                if (_qrType == 'wifi')
-                  ElevatedButton(
-                    onPressed: () {
-                      setState(() {
-                        _qrData = 'WIFI:T:WPA;S:MyNetwork;P:mypassword;;';
-                        _textController.text = _qrData;
-                      });
-                    },
-                    child: const Text('Use WiFi Template'),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _saveQRCode() async {
-    try {
-      final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final image = await boundary.toImage();
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final bytes = byteData!.buffer.asUint8List();
-
-      final directory = await getApplicationDocumentsDirectory();
-      final imagePath = '${directory.path}/qr_code.png';
-      final File imageFile = File(imagePath);
-      await imageFile.writeAsBytes(bytes);
-      
-      await ImageGallerySaver.saveFile(imagePath);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('QR code saved to gallery')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error saving QR code: $e')),
-      );
-    }
-  }
-
-  Future<void> _shareQRCode() async {
-    try {
-      final boundary = globalKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
-      final image = await boundary.toImage();
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      final bytes = byteData!.buffer.asUint8List();
-
-      final directory = await getApplicationDocumentsDirectory();
-      final imagePath = '${directory.path}/qr_code_share.png';
-      final File imageFile = File(imagePath);
-      await imageFile.writeAsBytes(bytes);
-      
-      await Share.shareFiles([imagePath], text: 'Check out this QR code');
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error sharing QR code: $e')),
-      );
-    }
-  }
-
-  void _saveToHistory() {
-    if (_qrData.isNotEmpty && _qrData != 'Enter text to generate QR code') {
-      final historyBox = Hive.box<QRHistory>('qrHistory');
-      historyBox.add(QRHistory(
-        content: _qrData,
-        isGenerated: true,
-        timestamp: DateTime.now(),
-        type: _qrType,
-      ));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('QR code saved to history')),
-      );
-    }
-  }
+  final TextEditingController _controller = TextEditingController();
+  String qrData = '';
 
   @override
   void dispose() {
-    _textController.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  void _generateQR() {
+    if (_controller.text.isNotEmpty) {
+      setState(() {
+        qrData = _controller.text;
+      });
+      // Save to history
+      final box = Hive.box<QRHistory>('qrHistory');
+      box.add(QRHistory(
+        content: qrData,
+        timestamp: DateTime.now(),
+        type: 'generated',
+        isGenerated: true,
+      ));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Generate QR Code'),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: TextField(
+                    controller: _controller,
+                    decoration: InputDecoration(
+                      labelText: 'Enter text or URL',
+                      hintText: 'Type something to generate QR code',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: Icon(Icons.text_fields, color: colorScheme.primary),
+                    ),
+                    maxLines: 3,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton.icon(
+                onPressed: _generateQR,
+                icon: const Icon(Icons.qr_code),
+                label: const Text('Generate QR Code'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 30),
+              if (qrData.isNotEmpty)
+                Card(
+                  elevation: 4,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        QrImageView(
+                          data: qrData,
+                          size: 200,
+                          backgroundColor: Colors.white,
+                        ),
+                        const SizedBox(height: 20),
+                        Text(
+                          'QR Code Generated!',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          qrData,
+                          style: TextStyle(
+                            color: colorScheme.secondary,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
